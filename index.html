@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>每日核心能力打卡</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #ffffff;
+    --bg2: #f5f5f3;
+    --bg3: #ededea;
+    --text: #1a1a18;
+    --text2: #6b6b67;
+    --text3: #9e9e9a;
+    --border: rgba(0,0,0,0.10);
+    --border2: rgba(0,0,0,0.18);
+    --radius: 8px;
+    --radius-lg: 12px;
+    --green: #1D9E75;
+    --green-bg: #E1F5EE;
+    --green-text: #085041;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1c1a;
+      --bg2: #252523;
+      --bg3: #2e2e2b;
+      --text: #f0efe8;
+      --text2: #9e9e9a;
+      --text3: #6b6b67;
+      --border: rgba(255,255,255,0.10);
+      --border2: rgba(255,255,255,0.18);
+      --green-bg: #04342C;
+      --green-text: #9FE1CB;
+    }
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: var(--bg3);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 1rem;
+  }
+
+  .container { max-width: 680px; margin: 0 auto; }
+
+  .app-header {
+    display: flex; justify-content: space-between; align-items: flex-end;
+    margin-bottom: 1rem; padding-top: .5rem;
+  }
+  .app-title { font-size: 18px; font-weight: 500; }
+  .app-date { font-size: 13px; color: var(--text2); margin-top: 2px; }
+
+  .reset-btn {
+    font-size: 12px; color: var(--text2); cursor: pointer;
+    padding: 5px 12px; border-radius: var(--radius);
+    border: 0.5px solid var(--border2); background: transparent;
+    transition: background .15s;
+  }
+  .reset-btn:hover { background: var(--bg2); }
+
+  .streak-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; margin-bottom: 12px; }
+  .streak-card {
+    background: var(--bg2); border-radius: var(--radius);
+    padding: .625rem .875rem;
+  }
+  .streak-num { font-size: 22px; font-weight: 500; }
+  .streak-lbl { font-size: 11px; color: var(--text2); margin-top: 2px; }
+
+  .progress-row { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; }
+  .progress-track { flex: 1; height: 6px; background: var(--bg3); border-radius: 3px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 3px; background: var(--green); transition: width .3s ease; }
+  .progress-text { font-size: 13px; font-weight: 500; color: var(--text2); min-width: 40px; text-align: right; }
+
+  .section {
+    background: var(--bg);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    margin-bottom: 10px;
+  }
+  .section-head {
+    display: flex; align-items: center; gap: 10px;
+    padding: .75rem 1rem;
+    border-bottom: 0.5px solid var(--border);
+  }
+  .section-icon {
+    width: 28px; height: 28px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .section-title { font-size: 14px; font-weight: 500; flex: 1; }
+  .section-badge {
+    font-size: 11px; padding: 2px 8px;
+    border-radius: 10px; font-weight: 500;
+    background: var(--bg2); color: var(--text2);
+    transition: background .2s, color .2s;
+  }
+  .section-badge.complete { background: var(--green-bg); color: var(--green-text); }
+
+  .item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: .65rem 1rem;
+    border-bottom: 0.5px solid var(--border);
+    cursor: pointer;
+    transition: background .1s;
+    user-select: none;
+  }
+  .item:last-child { border-bottom: none; }
+  .item:hover { background: var(--bg2); }
+  .item.done .item-text { color: var(--text3); text-decoration: line-through; }
+
+  .check {
+    width: 18px; height: 18px; border-radius: 4px;
+    border: 1.5px solid var(--border2);
+    flex-shrink: 0; margin-top: 1px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all .15s;
+  }
+  .check.checked { border-color: var(--green); background: var(--green); }
+
+  .item-text { font-size: 13px; line-height: 1.55; flex: 1; }
+  .item-time { font-size: 11px; color: var(--text3); flex-shrink: 0; margin-top: 2px; white-space: nowrap; }
+
+  .footer { text-align: center; font-size: 12px; color: var(--text3); padding: 1.5rem 0 1rem; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="app-header">
+    <div>
+      <div class="app-title">每日核心能力打卡</div>
+      <div class="app-date" id="today-str"></div>
+    </div>
+    <button class="reset-btn" onclick="resetDay()">重置今日</button>
+  </div>
+
+  <div class="streak-row">
+    <div class="streak-card"><div class="streak-num" id="s-done">0</div><div class="streak-lbl">今日完成</div></div>
+    <div class="streak-card"><div class="streak-num" id="s-total">0</div><div class="streak-lbl">总任务数</div></div>
+    <div class="streak-card"><div class="streak-num" id="s-streak">0</div><div class="streak-lbl">连续天数</div></div>
+    <div class="streak-card"><div class="streak-num" id="s-pct">0%</div><div class="streak-lbl">完成率</div></div>
+  </div>
+
+  <div class="progress-row">
+    <div class="progress-track"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+    <div class="progress-text" id="prog-text">0 / 0</div>
+  </div>
+
+  <div id="list-container"></div>
+
+  <div class="footer">数据保存在本地浏览器，不上传任何服务器</div>
+</div>
+
+<script>
+const SECTIONS = [
+  {
+    id:'cog', title:'认知与学习力', color:'#534AB7', bg:'#EEEDFE', icon:'ti-brain',
+    items:[
+      {id:'c1', text:'费曼输出：用自己的话解释今天学到的一个概念（写3句话）', time:'15min'},
+      {id:'c2', text:'主题阅读：非小说类书籍或文章，专注阅读不刷手机', time:'20min'},
+      {id:'c3', text:'新知卡片：在Anki或笔记本新增1张知识卡片', time:'5min'},
+    ]
+  },
+  {
+    id:'crit', title:'批判性思维', color:'#185FA5', bg:'#E6F1FB', icon:'ti-filter',
+    items:[
+      {id:'r1', text:'预测日记：记录今天一件事的预期结果和置信度', time:'5min'},
+      {id:'r2', text:'Steel-man练习：找一个自己不同意的观点，写出它最强的论据', time:'10min'},
+    ]
+  },
+  {
+    id:'comm', title:'沟通与表达力', color:'#0F6E56', bg:'#E1F5EE', icon:'ti-message-circle',
+    items:[
+      {id:'m1', text:'每日写作：公众号/日记/朋友圈输出一段有结构的文字（≥150字）', time:'15min'},
+      {id:'m2', text:'结构化表达：今天至少一次用"结论—原因—举例"顺序表达观点', time:'随时'},
+    ]
+  },
+  {
+    id:'exec', title:'执行与自律力', color:'#854F0B', bg:'#FAEEDA', icon:'ti-bolt',
+    items:[
+      {id:'e1', text:'番茄钟：完成至少4个番茄钟（每个25分钟专注+5分钟休息）', time:'2h'},
+      {id:'e2', text:'每日3件事：早晨写下今天最重要的3件事，晚上打勾复盘', time:'5min'},
+      {id:'e3', text:'无手机晨间：起床后前30分钟不看手机', time:'30min'},
+    ]
+  },
+  {
+    id:'eq', title:'情绪与逆境力', color:'#993556', bg:'#FBEAF0', icon:'ti-heart',
+    items:[
+      {id:'q1', text:'正念冥想：用潮汐/Headspace做10分钟正念练习', time:'10min'},
+      {id:'q2', text:'情绪日记：记录今天一次强烈情绪，写出触发事件和身体感受', time:'5min'},
+    ]
+  },
+  {
+    id:'collab', title:'协作与影响力', color:'#3B6D11', bg:'#EAF3DE', icon:'ti-network',
+    items:[
+      {id:'l1', text:'主动给予：今天主动帮助或给予一个人（转发有用信息/反馈/鼓励）', time:'随时'},
+      {id:'l2', text:'深度倾听：今天一次对话中，只倾听不打断，并复述对方核心意思', time:'随时'},
+    ]
+  },
+  {
+    id:'ai', title:'数字与AI素养', color:'#993C1D', bg:'#FAECE7', icon:'ti-cpu',
+    items:[
+      {id:'a1', text:'AI实战：用AI工具完成一项真实工作任务（不只是聊天）', time:'20min'},
+      {id:'a2', text:'提示词优化：今天至少一次迭代改进自己的提示词，记录效果差异', time:'10min'},
+    ]
+  }
+];
+
+const KEY_STATE = 'checklist_state_v1';
+const KEY_STREAK = 'checklist_streak_v1';
+
+function todayKey() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function loadState() {
+  try { return JSON.parse(localStorage.getItem(KEY_STATE) || '{}'); } catch(e) { return {}; }
+}
+function saveState(s) { try { localStorage.setItem(KEY_STATE, JSON.stringify(s)); } catch(e) {} }
+function loadStreak() {
+  try { return JSON.parse(localStorage.getItem(KEY_STREAK) || '{"days":0,"last":""}'); } catch(e) { return {days:0,last:''}; }
+}
+function saveStreak(s) { try { localStorage.setItem(KEY_STREAK, JSON.stringify(s)); } catch(e) {} }
+
+let state = loadState();
+const today = todayKey();
+if (!state[today]) state[today] = {};
+
+function getAllItems() {
+  return SECTIONS.flatMap(s => s.items);
+}
+
+function countDone() {
+  return getAllItems().filter(i => state[today][i.id]).length;
+}
+
+function updateStreak() {
+  const done = countDone();
+  const total = getAllItems().length;
+  const sk = loadStreak();
+  if (done === total && total > 0) {
+    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+    if (sk.last === yesterday) { sk.days++; sk.last = today; saveStreak(sk); }
+    else if (sk.last !== today) { sk.days = 1; sk.last = today; saveStreak(sk); }
+  }
+  return loadStreak().days;
+}
+
+function updateStats() {
+  const done = countDone();
+  const total = getAllItems().length;
+  document.getElementById('s-done').textContent = done;
+  document.getElementById('s-total').textContent = total;
+  document.getElementById('s-streak').textContent = updateStreak();
+  document.getElementById('s-pct').textContent = total > 0 ? Math.round(done / total * 100) + '%' : '0%';
+  document.getElementById('prog-fill').style.width = total > 0 ? Math.round(done / total * 100) + '%' : '0%';
+  document.getElementById('prog-text').textContent = done + ' / ' + total;
+  SECTIONS.forEach(sec => {
+    const secDone = sec.items.filter(i => state[today][i.id]).length;
+    const badge = document.getElementById('badge-' + sec.id);
+    if (badge) {
+      badge.textContent = secDone + '/' + sec.items.length;
+      badge.className = 'section-badge' + (secDone === sec.items.length ? ' complete' : '');
+    }
+  });
+}
+
+function toggle(itemId) {
+  state[today][itemId] = !state[today][itemId];
+  saveState(state);
+  const el = document.getElementById('item-' + itemId);
+  const chk = document.getElementById('chk-' + itemId);
+  if (state[today][itemId]) {
+    el.classList.add('done');
+    chk.classList.add('checked');
+    chk.innerHTML = '<svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  } else {
+    el.classList.remove('done');
+    chk.classList.remove('checked');
+    chk.innerHTML = '';
+  }
+  updateStats();
+}
+
+function resetDay() {
+  if (!confirm('确认重置今日所有打卡记录？')) return;
+  state[today] = {};
+  saveState(state);
+  render();
+}
+
+function render() {
+  const d = new Date();
+  const days = ['周日','周一','周二','周三','周四','周五','周六'];
+  document.getElementById('today-str').textContent =
+    d.getFullYear() + '年' + (d.getMonth()+1) + '月' + d.getDate() + '日 ' + days[d.getDay()];
+
+  const container = document.getElementById('list-container');
+  container.innerHTML = '';
+
+  SECTIONS.forEach(sec => {
+    const secEl = document.createElement('div');
+    secEl.className = 'section';
+
+    const secDone = sec.items.filter(i => state[today][i.id]).length;
+    const badgeClass = secDone === sec.items.length ? 'section-badge complete' : 'section-badge';
+
+    let html = `<div class="section-head">
+      <div class="section-icon" style="background:${sec.bg}">
+        <i class="ti ${sec.icon}" style="color:${sec.color};font-size:15px" aria-hidden="true"></i>
+      </div>
+      <div class="section-title">${sec.title}</div>
+      <span class="${badgeClass}" id="badge-${sec.id}">${secDone}/${sec.items.length}</span>
+    </div>`;
+
+    sec.items.forEach(item => {
+      const checked = !!state[today][item.id];
+      html += `<div class="item${checked ? ' done' : ''}" id="item-${item.id}" onclick="toggle('${item.id}')">
+        <div class="check${checked ? ' checked' : ''}" id="chk-${item.id}">
+          ${checked ? '<svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>' : ''}
+        </div>
+        <div class="item-text">${item.text}</div>
+        <div class="item-time">${item.time}</div>
+      </div>`;
+    });
+
+    secEl.innerHTML = html;
+    container.appendChild(secEl);
+  });
+
+  updateStats();
+}
+
+render();
+</script>
+</body>
+</html>
